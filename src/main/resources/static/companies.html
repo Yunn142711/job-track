@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>企業一覧 | JobTrack</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f5fafa;
+        }
+
+        h1 {
+            color: #234;
+        }
+
+        .company {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .company-name {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .position {
+            margin-top: 8px;
+        }
+
+        .status {
+            margin-top: 8px;
+        }
+
+        button {
+            margin-top: 12px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .back {
+            background: #4f9eaa;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>企業一覧</h1>
+
+    <button class="back" onclick="location.href='/'">
+        ← ダッシュボードへ戻る
+    </button>
+
+    <div id="companyList"></div>
+
+    <script>
+        fetch('/jobs')
+            .then(response => response.json())
+            .then(jobs => {
+
+                const companyList =
+                    document.getElementById('companyList');
+
+                jobs.forEach(job => {
+
+                    const div =
+                        document.createElement('div');
+
+                    div.className = 'company';
+
+                    div.innerHTML = `
+                        <div class="company-name">
+                            ${job.companyName}
+                        </div>
+
+                        <div class="position">
+                            ポジション：${job.position}
+                        </div>
+
+                        <div class="status">
+                            ステータス：${job.status}
+                        </div>
+                    `;
+
+                    companyList.appendChild(div);
+                });
+            });
+    </script>
+
+</body>
+</html>

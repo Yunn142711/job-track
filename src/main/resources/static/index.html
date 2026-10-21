@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobTrack | 就活管理システム</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:"Segoe UI","Noto Sans JP",Arial,sans-serif;background:#f5f8f7;color:#203331}
+button,input,select,textarea{font:inherit}
+.app{min-height:100vh}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:245px;background:#fff;border-right:1px solid #e3ebe9;padding:28px 18px;z-index:20}
+.logo{font-size:26px;font-weight:800;color:#147d73;margin:0 12px 30px}.logo span{color:#203331}
+.nav{display:flex;flex-direction:column;gap:8px}
+.nav-btn{width:100%;border:0;background:transparent;text-align:left;padding:13px 15px;border-radius:12px;color:#536360;font-weight:700;cursor:pointer}
+.nav-btn:hover,.nav-btn.active{background:#e7f5f2;color:#0d625b}
+.logout{position:absolute;left:18px;right:18px;bottom:25px;width:calc(100% - 36px)}
+.main{margin-left:245px;min-height:100vh;padding:38px 45px;width:auto}
+.header{margin:0 0 28px}.header h1{margin:0 0 7px;font-size:30px}.header p{margin:0;color:#71807e}
+.section{display:none !important;width:100%;margin:0;padding:0}
+.section.active{display:block !important}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-bottom:22px}
+.stat-card,.card,.company-card,.memo-box{background:#fff;border:1px solid #e3ebe9;border-radius:18px;box-shadow:0 8px 24px rgba(24,70,65,.08)}
+.stat-card{padding:22px}.stat-label{color:#71807e;font-size:14px;font-weight:700}.stat-number{margin-top:8px;font-size:30px;font-weight:800;color:#0d625b}
+.dashboard-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:22px}.card{padding:24px}.card-title{font-size:18px;font-weight:800;margin-bottom:20px}
+.status-row{margin:16px 0}.status-head{display:flex;justify-content:space-between;margin-bottom:7px;font-size:14px}.bar{height:9px;background:#edf2f1;border-radius:99px;overflow:hidden}.bar-fill{height:100%;background:#147d73;border-radius:99px}
+.job-list{display:flex;flex-direction:column;gap:12px}.job-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px;border:1px solid #e3ebe9;border-radius:13px}.job-company{font-weight:800}.job-position{font-size:13px;color:#71807e;margin-top:4px}
+.badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#e7f5f2;color:#0d625b;font-size:12px;font-weight:800;white-space:nowrap}
+.toolbar{display:flex;gap:12px;margin-bottom:20px}.input,.select,.textarea{width:100%;border:1px solid #e3ebe9;border-radius:11px;padding:12px 14px;background:#fff;color:#203331;outline:none}.input:focus,.select:focus,.textarea:focus{border-color:#147d73}
+.toolbar .input{max-width:440px}.toolbar .select{max-width:220px}
+.company-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}.company-card{padding:20px}.company-card h3{margin:0 0 6px}.company-card p{margin:0;color:#71807e;font-size:14px}
+.actions{display:flex;gap:8px;margin-top:13px}.btn{border:0;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:800}.btn-primary{background:#147d73;color:#fff}.btn-primary:hover{background:#0d625b}.btn-light{background:#eef4f3;color:#0d625b}.btn-danger{background:#fff0ef;color:#d9534f}
+.form-card{max-width:760px}.form-group{margin-bottom:18px}.form-group label{display:block;font-weight:800;margin-bottom:8px}.form-actions{display:flex;gap:10px}
+.memo-container{display:flex;flex-direction:column;gap:18px}.memo-box{padding:23px}.memo-box h3{margin:0 0 12px}.memo-text{min-height:70px;margin-bottom:15px;color:#536360;line-height:1.75;white-space:pre-wrap;word-break:break-word}
+.notice{padding:14px 17px;background:#e7f5f2;color:#0d625b;border-radius:12px;margin-bottom:18px;font-size:14px}.empty{text-align:center;color:#71807e;padding:30px}
+@media(max-width:900px){.sidebar{width:205px}.main{margin-left:205px;padding:28px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.app{display:block}.sidebar{position:static;width:100%;height:auto;border-right:0;border-bottom:1px solid #e3ebe9}.nav{display:grid;grid-template-columns:1fr 1fr}.logout{position:static;width:100%;margin-top:10px}.main{margin-left:0;padding:22px 16px}.stats,.company-grid{grid-template-columns:1fr}.toolbar{flex-direction:column}.toolbar .input,.toolbar .select{max-width:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+<div class="logo">Job<span>Track</span></div>
+<nav class="nav">
+<button class="nav-btn active" onclick="showSection('dashboard',this)">🏠 ダッシュボード</button>
+<button class="nav-btn" onclick="showSection('companies',this)">🏢 企業一覧</button>
+<button class="nav-btn" onclick="showSection('add',this)">＋ 求人登録</button>
+<button class="nav-btn" onclick="showSection('memo',this)">📝 自己PR・メモ</button>
+</nav>
+<button class="nav-btn logout" onclick="logout()">↪ ログアウト</button>
+</aside>
+
+<main class="main">
+<header class="header">
+<h1>JobTrack 就活管理システム</h1>
+<p>就職活動をシンプルに管理しましょう。</p>
+</header>
+
+<section id="dashboard" class="section active">
+<div class="stats">
+<div class="stat-card"><div class="stat-label">登録企業数</div><div class="stat-number" id="totalCount">0</div></div>
+<div class="stat-card"><div class="stat-label">応募済み</div><div class="stat-number" id="appliedCount">0</div></div>
+<div class="stat-card"><div class="stat-label">面接</div><div class="stat-number" id="interviewCount">0</div></div>
+<div class="stat-card"><div class="stat-label">内定</div><div class="stat-number" id="offerCount">0</div></div>
+</div>
+<div class="dashboard-grid">
+<div class="card"><div class="card-title">選考ステータス</div><div id="statusStats"></div></div>
+<div class="card"><div class="card-title">最近登録した求人</div><div id="recentJobs" class="job-list"></div></div>
+</div>
+</section>
+
+<section id="companies" class="section">
+<div class="card">
+<div class="card-title">企業一覧</div>
+<div class="toolbar">
+<input id="searchInput" class="input" placeholder="企業名・ポジションを検索..." oninput="renderJobs()">
+<select id="statusFilter" class="select" onchange="renderJobs()">
+<option value="">すべてのステータス</option><option>応募予定</option><option>応募済み</option><option>書類選考</option><option>面接</option><option>内定</option><option>不採用</option>
+</select>
+</div>
+<div id="companyList" class="company-grid"></div>
+</div>
+</section>
+
+<section id="add" class="section">
+<div class="card form-card">
+<div class="card-title" id="formTitle">求人登録</div>
+<div class="notice">企業名・ポジション・現在の選考状況を入力してください。</div>
+<form id="jobForm">
+<div class="form-group"><label for="companyName">企業名</label><input id="companyName" class="input" required placeholder="例：ABC株式会社"></div>
+<div class="form-group"><label for="position">ポジション</label><input id="position" class="input" required placeholder="例：Webエンジニア"></div>
+<div class="form-group"><label for="status">ステータス</label><select id="status" class="select" required><option>応募予定</option><option>応募済み</option><option>書類選考</option><option>面接</option><option>内定</option><option>不採用</option></select></div>
+<div class="form-actions"><button class="btn btn-primary" type="submit">保存する</button><button class="btn btn-light" type="button" onclick="resetJobForm()">キャンセル</button></div>
+</form>
+</div>
+</section>
+
+<section id="memo" class="section">
+<div class="card">
+<div class="card-title">自己PR・志望動機・メモ</div>
+<div class="notice">「編集」から入力できます。内容はこのブラウザに保存されます。</div>
+<div class="memo-container">
+<div class="memo-box"><h3>自己PR</h3><div id="selfprText" class="memo-text">まだ登録されていません</div><button class="btn btn-primary" onclick="editMemo('selfpr')">✏️ 編集</button></div>
+<div class="memo-box"><h3>志望動機</h3><div id="motivationText" class="memo-text">まだ登録されていません</div><button class="btn btn-primary" onclick="editMemo('motivation')">✏️ 編集</button></div>
+<div class="memo-box"><h3>メモ</h3><div id="memoText" class="memo-text">まだ登録されていません</div><button class="btn btn-primary" onclick="editMemo('memo')">✏️ 編集</button></div>
+</div>
+</div>
+</section>
+</main>
+</div>
+
+<script>
+let jobs=[];
+let editingJobId=null;
+
+function showSection(id,button){
+document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+const target=document.getElementById(id);
+if(target) target.classList.add('active');
+document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+if(button) button.classList.add('active');
+if(id==='companies') renderJobs();
+if(id==='dashboard') updateDashboard();
+if(id==='memo') loadMemo();
+}
+
+async function loadJobs(){
+try{
+const r=await fetch('/jobs');
+if(!r.ok) throw new Error();
+jobs=await r.json();
+}catch(e){console.error(e);jobs=[]}
+renderJobs();updateDashboard();
+}
+
+function renderJobs(){
+const list=document.getElementById('companyList');if(!list)return;
+const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+const f=document.getElementById('statusFilter')?.value||'';
+const filtered=jobs.filter(j=>`${j.companyName} ${j.position}`.toLowerCase().includes(q)&&(!f||j.status===f));
+if(!filtered.length){list.innerHTML='<div class="empty" style="grid-column:1/-1">登録された求人がありません。</div>';return}
+list.innerHTML=filtered.map(j=>`<div class="company-card"><h3>${esc(j.companyName)}</h3><p>${esc(j.position)}</p><div style="margin-top:14px"><span class="badge">${esc(j.status)}</span></div><div class="actions"><button class="btn btn-light" onclick="editJob(${j.id})">編集</button><button class="btn btn-danger" onclick="deleteJob(${j.id})">削除</button></div></div>`).join('');
+}
+
+function updateDashboard(){
+document.getElementById('totalCount').textContent=jobs.length;
+document.getElementById('appliedCount').textContent=jobs.filter(j=>j.status==='応募済み').length;
+document.getElementById('interviewCount').textContent=jobs.filter(j=>j.status==='面接').length;
+document.getElementById('offerCount').textContent=jobs.filter(j=>j.status==='内定').length;
+const statuses=['応募予定','応募済み','書類選考','面接','内定','不採用'];
+document.getElementById('statusStats').innerHTML=statuses.map(s=>{const c=jobs.filter(j=>j.status===s).length;const p=jobs.length?Math.round(c/jobs.length*100):0;return `<div class="status-row"><div class="status-head"><span>${s}</span><strong>${c}</strong></div><div class="bar"><div class="bar-fill" style="width:${p}%"></div></div></div>`}).join('');
+const latest=[...jobs].reverse().slice(0,5);
+document.getElementById('recentJobs').innerHTML=latest.length?latest.map(j=>`<div class="job-item"><div><div class="job-company">${esc(j.companyName)}</div><div class="job-position">${esc(j.position)}</div></div><span class="badge">${esc(j.status)}</span></div>`).join(''):'<div class="empty">まだ求人がありません。</div>';
+}
+
+document.getElementById('jobForm').addEventListener('submit',async e=>{
+e.preventDefault();
+const data={companyName:document.getElementById('companyName').value.trim(),position:document.getElementById('position').value.trim(),status:document.getElementById('status').value};
+try{
+const r=editingJobId!==null?await fetch('/jobs/'+editingJobId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}):await fetch('/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+if(!r.ok)throw new Error();
+editingJobId=null;document.getElementById('formTitle').textContent='求人登録';document.getElementById('jobForm').reset();await loadJobs();showSection('companies');alert('保存しました！');
+}catch(e){console.error(e);alert('保存に失敗しました。')}
+});
+
+function editJob(id){
+const j=jobs.find(x=>x.id===id);if(!j)return;
+editingJobId=id;document.getElementById('companyName').value=j.companyName;document.getElementById('position').value=j.position;document.getElementById('status').value=j.status;document.getElementById('formTitle').textContent='求人編集';showSection('add');
+}
+
+async function deleteJob(id){
+if(!confirm('この求人を削除しますか？'))return;
+try{const r=await fetch('/jobs/'+id,{method:'DELETE'});if(!r.ok)throw new Error();await loadJobs();alert('削除しました！')}catch(e){alert('削除に失敗しました。')}
+}
+
+function resetJobForm(){editingJobId=null;document.getElementById('jobForm').reset();document.getElementById('formTitle').textContent='求人登録';showSection('dashboard');}
+
+function editMemo(type){
+const key='jobtrack_'+type;
+const title=type==='selfpr'?'自己PR':type==='motivation'?'志望動機':'メモ';
+const text=prompt(`${title}を入力してください`,localStorage.getItem(key)||'');
+if(text===null)return;
+localStorage.setItem(key,text);loadMemo();
+}
+let memoData = {
+    selfpr: "",
+    motivation: "",
+    memo: ""
+};
+
+async function loadMemo() {
+    try {
+        const response = await fetch("/memo");
+
+        if (!response.ok) {
+            throw new Error("Memo loading failed");
+        }
+
+        const data = await response.json();
+
+        memoData.selfpr = data.selfPr || "";
+        memoData.motivation = data.motivation || "";
+        memoData.memo = data.memo || "";
+
+    } catch (error) {
+        console.error(error);
+    }
+
+    document.getElementById("selfprText").textContent =
+        memoData.selfpr || "まだ登録されていません";
+
+    document.getElementById("motivationText").textContent =
+        memoData.motivation || "まだ登録されていません";
+
+    document.getElementById("memoText").textContent =
+        memoData.memo || "まだ登録されていません";
+}
+
+
+async function editMemo(type) {
+
+    const titles = {
+        selfpr: "自己PR",
+        motivation: "志望動機",
+        memo: "メモ"
+    };
+
+    const currentText = memoData[type] || "";
+
+    const text = prompt(
+        `${titles[type]}を入力してください`,
+        currentText
+    );
+
+    if (text === null) {
+        return;
+    }
+
+    memoData[type] = text;
+
+    try {
+
+        const response = await fetch("/memo", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                selfPr: memoData.selfpr,
+                motivation: memoData.motivation,
+                memo: memoData.memo
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("Memo save failed");
+        }
+
+        await loadMemo();
+
+        alert("保存しました！");
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("保存に失敗しました。");
+    }
+}
+
+async function loadMemo() {
+    try {
+        const response = await fetch('/memo');
+
+        if (!response.ok) {
+            throw new Error('Memo loading failed');
+        }
+
+        const data = await response.json();
+
+        document.getElementById('selfprText').textContent =
+            data.selfPr || 'まだ登録されていません';
+
+        document.getElementById('motivationText').textContent =
+            data.motivation || 'まだ登録されていません';
+
+        document.getElementById('memoText').textContent =
+            data.memo || 'まだ登録されていません';
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function logout(){
+try{await fetch('/auth/logout',{method:'POST'});}catch(e){console.error(e)}
+window.location.href='/login.html';
+}
+
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+
+loadMemo();
+loadJobs();
+</script>
+</body>
+</html>
